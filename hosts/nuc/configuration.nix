@@ -32,6 +32,7 @@
     };
     hardware = {
       bluetooth.enable = true;
+      fwupd.enable = true;
       intel_graphics.enable = true;
       networking = {
         hostname = "frost-nuc";
@@ -42,6 +43,12 @@
         alsa.enable = true;
         pulse.enable = true;
       };
+      power = {
+        enable = true;
+        thermald.enable = true;
+      };
+      # Also enable Wake-on-LAN and "After Power Failure: Power On" in the BIOS.
+      wake_on_lan.enable = true;
     };
     personalization = {
       fcitx5 = {
@@ -77,11 +84,21 @@
     storage = {
       # nix-ld: lets VS Code/Zed remote servers and prebuilt npm/pip binaries run.
       fhs.enable = true;
+      snapper = {
+        enable = true;
+        allowUsers = ["arpan"];
+      };
     };
     system = {
+      # Rebuilds the local checkout nightly with the latest nixos-26.05 nixpkgs (security fixes).
+      auto_upgrade = {
+        enable = true;
+        flake = "/home/arpan/Frost#nuc";
+      };
       keymap = "us";
       home_manager.enable = true;
       autoTimezone = true;
+      zram.enable = true;
     };
     virtualization = {
       docker.enable = true;

@@ -188,6 +188,16 @@ After first boot (log in once locally or over SSH):
 1. `sudo tailscale up --ssh` and approve the machine in your tailnet. `--ssh` enables Tailscale SSH, so `ssh arpan@<nuc>` works from your tailnet without adding a key (OpenSSH itself is key-only: add keys to `frost.services.ssh.authorizedKeys`).
 2. Open `https://<nuc-tailscale-name>:47990` from another tailnet device, create the Sunshine admin login.
 3. In Moonlight, add the host by its Tailscale IP or MagicDNS name and enter the pairing PIN in the Sunshine web UI.
+4. Clone this repo to `/home/arpan/Frost`. The niri config links from there, and the nightly upgrade rebuilds from it.
+5. In the BIOS, enable Wake-on-LAN and set *After Power Failure* to *Power On*.
+
+Keeping it healthy unattended:
+
+* **Nightly upgrade (04:00):** rebuilds `/home/arpan/Frost#nuc` with the newest `nixos-26.05` nixpkgs, so security fixes land without you. Your `flake.lock` is not modified, and whatever is checked out (including uncommitted edits) is what gets deployed. Check with `systemctl status nixos-upgrade`; roll back from the boot menu if a night goes wrong.
+* **Snapshots:** snapper snapshots `/home` hourly (12 hourly, 7 daily, 4 weekly, 3 monthly). `snapper -c home list`, then copy files back out of `/home/.snapshots/<n>/snapshot/`. These protect against mistakes, not disk failure; add an off-machine backup for that.
+* **Memory:** zram swap (50% of RAM, compressed) plus earlyoom, which kills the biggest process before the box freezes.
+* **Wake-on-LAN:** magic packets are accepted on the wired port. Send one from a device on the same LAN (router, phone app, `wakeonlan <mac>`); Tailscale can't reach a powered-off machine.
+* **Firmware and thermals:** `fwupdmgr refresh && fwupdmgr update` for firmware the vendor publishes to LVFS; thermald manages CPU temperatures.
 
 Notes:
 
@@ -213,13 +223,13 @@ Frost utilizes a unified, predictable option hierarchy:
 | `frost.desktop.des` | `gnome` |
 | `frost.desktop.dms` | `sddm`, `greetd` (tuigreet, optional auto-login), `caelestia-greeter` |
 | `frost.desktop.tools` | `caelestia`, `dank_material_shell` |
-| `frost.hardware` | `pipewire`, `bluetooth`, `power`, `intel_graphics` (VA-API), `networking` (NetworkManager or Networkd) |
+| `frost.hardware` | `pipewire`, `bluetooth`, `power` (optional `thermald`), `intel_graphics` (VA-API), `wake_on_lan`, `fwupd`, `networking` (NetworkManager or Networkd) |
 | `frost.security` | `pam` (YubiKey U2F), `sops_nix`, `polkit`, `gnome_keyring`, `onepassword` |
 | `frost.personalization` | `fonts` (optional `gujarati`), `fcitx5` (Rime, m17n), `locales`, `xdg` |
 | `frost.services` | `ssh`, `mosh`, `tailscale`, `sunshine`, `wireguard`, `cloudflared`, `syncthing`, `adguard` |
-| `frost.storage` | `disko`, `impermanence` (root-on-tmpfs), `btrfs_rollback`, `zfs` |
+| `frost.storage` | `disko`, `impermanence` (root-on-tmpfs), `btrfs_rollback`, `snapper`, `zfs` |
 | `frost.virtualization` | `microvm` (declarative hypervisor guest VMs), `docker`, `podman`, `libvirt` |
-| `frost.system` | `home_manager` (shared module injection), `keymap`, `autoTimezone` |
+| `frost.system` | `home_manager` (shared module injection), `auto_upgrade`, `zram`, `keymap`, `autoTimezone` |
 
 ### User Options (`frost.home.apps.*`)
 

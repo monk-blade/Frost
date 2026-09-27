@@ -13,8 +13,6 @@
   ];
 
   system.stateVersion = stateVersion;
-  system.autoUpgrade.enable = true;
-  system.autoUpgrade.allowReboot = false;
 
   nix.gc.automatic = true;
   nix.gc.dates = "weekly";
