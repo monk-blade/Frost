@@ -27,7 +27,8 @@ Frost/
 │   ├── base.nix            # Core Nix settings (GC, flakes, trusted-users)
 │   ├── boot.nix            # Standard systemd-boot loader configuration
 │   ├── workstation/        # Starter graphical workstation (Hyprland + GNOME)
-│   └── server/             # Starter headless server (Docker + SSH)
+│   ├── server/             # Starter headless server (Docker + SSH)
+│   └── nuc/                # Remote desktop mini PC (niri + DankMaterialShell, Sunshine over Tailscale)
 ├── modules/                # System-level modules (frost.* namespace)
 │   ├── desktop/            # Window managers, desktop environments, display managers
 │   ├── hardware/           # Audio (PipeWire), Bluetooth, Networking, Power
@@ -63,6 +64,7 @@ Ideal if you want a complete, self-contained NixOS setup for your personal machi
 2. **Inspect and adjust starter configurations**:
    * [`hosts/workstation/`](hosts/workstation) — Pre-configured with Hyprland, GNOME, PipeWire, SDDM, and Disko NVMe partitioning.
    * [`hosts/server/`](hosts/server) — Pre-configured headless setup with Docker, OpenSSH, and standard Disko SATA partitioning.
+   * [`hosts/nuc/`](hosts/nuc) — Intel NUC 13 Pro remote desktop: niri + DankMaterialShell, greetd auto-login, Sunshine with Intel VA-API encoding, Tailscale, and sleep disabled. See [Remote Desktop Host](#-remote-desktop-host-nuc).
    * [`home/users/frost.nix`](home/users/frost.nix) — Starter user dotfiles (Zsh, Starship, Neovim, Kitty, Git).
 
 3. **Customize credentials**:
@@ -173,6 +175,30 @@ sudo nixos-enter
 
 ---
 
+## 🖥️ Remote Desktop Host (NUC)
+
+`hosts/nuc` turns a mini PC into a machine you stream from with [Moonlight](https://moonlight-stream.org) over Tailscale. It auto-logs `frost` into niri so Sunshine always has a session to capture, and it disables suspend so the box stays reachable.
+
+```bash
+sudo nix run .#install -- nuc          # formats /dev/nvme0n1 (unencrypted Btrfs)
+```
+
+After first boot (log in once locally or over SSH):
+
+1. `sudo tailscale up` and approve the machine in your tailnet.
+2. Open `https://<nuc-tailscale-name>:47990` from another tailnet device, create the Sunshine admin login.
+3. In Moonlight, add the host by its Tailscale IP or MagicDNS name and enter the pairing PIN in the Sunshine web UI.
+
+Notes:
+
+* **No monitor attached?** The iGPU exposes no output to capture. Plug in an HDMI dummy plug (most reliable), or set `frost.services.sunshine.forceOutput = "HDMI-A-1";` to force the port on at boot.
+* **Firewall:** Sunshine ports are not opened on the LAN; `tailscale0` is a trusted interface. Set `frost.services.sunshine.openFirewall = true` for LAN streaming.
+* **Physical access:** auto-login means anyone at the keyboard gets the desktop. Lock it with `Mod+Alt+L` or enable DMS's idle lock.
+* **Encryption:** the disk is unencrypted so the box can come back unattended after a power cut. Use the `workstation` LUKS layout instead if that trade-off doesn't suit you.
+* **niri config:** `home/configs/niri/config.kdl` is DMS's recommended niri config with kitty as the terminal (`Mod+T`, launcher on `Mod+Space`). DMS writes its theme and keybind overrides to `~/.config/niri/dms/`.
+
+---
+
 ## 🧩 Option Namespaces Overview
 
 Frost utilizes a unified, predictable option hierarchy:
@@ -181,12 +207,13 @@ Frost utilizes a unified, predictable option hierarchy:
 
 | Namespace | Key Capabilities |
 | :--- | :--- |
-| `frost.desktop.wms` | `hyprland` (UWSM, Waybar, Caelestia integration) |
+| `frost.desktop.wms` | `hyprland` (UWSM, Waybar, Caelestia integration), `niri` |
 | `frost.desktop.des` | `gnome` |
-| `frost.desktop.dms` | `sddm`, `caelestia-greeter` |
-| `frost.hardware` | `pipewire`, `bluetooth`, `power`, `networking` (NetworkManager or Networkd) |
+| `frost.desktop.dms` | `sddm`, `greetd` (tuigreet, optional auto-login), `caelestia-greeter` |
+| `frost.desktop.tools` | `caelestia`, `dank_material_shell` |
+| `frost.hardware` | `pipewire`, `bluetooth`, `power`, `intel_graphics` (VA-API), `networking` (NetworkManager or Networkd) |
 | `frost.security` | `pam` (YubiKey U2F), `sops_nix`, `polkit`, `gnome_keyring`, `onepassword` |
-| `frost.services` | `ssh`, `tailscale`, `wireguard`, `cloudflared`, `syncthing`, `adguard` |
+| `frost.services` | `ssh`, `tailscale`, `sunshine`, `wireguard`, `cloudflared`, `syncthing`, `adguard` |
 | `frost.storage` | `disko`, `impermanence` (root-on-tmpfs), `btrfs_rollback`, `zfs` |
 | `frost.virtualization` | `microvm` (declarative hypervisor guest VMs), `docker`, `podman`, `libvirt` |
 | `frost.system` | `home_manager` (shared module injection), `keymap`, `autoTimezone` |

@@ -42,6 +42,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    dank-material-shell = {
+      url = "github:AvengeMedia/DankMaterialShell/v1.6.2";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     borealis = {
       url = "github:SpanishSyntax/Borealis";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -138,6 +143,7 @@
     nixosConfigurations = {
       workstation = mkSystem {host = "workstation";};
       server = mkSystem {host = "server";};
+      nuc = mkSystem {host = "nuc";};
     };
 
     packages.x86_64-linux = let
