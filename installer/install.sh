@@ -12,6 +12,7 @@ if [ -z "${HOST}" ]; then
   echo "Available starter hosts in Frost:"
   echo "  - workstation"
   echo "  - server"
+  echo "  - nuc"
   echo ""
   echo "Example:"
   echo "  frost-install workstation"

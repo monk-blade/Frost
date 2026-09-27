@@ -27,7 +27,8 @@ Frost/
 │   ├── base.nix            # Core Nix settings (GC, flakes, trusted-users)
 │   ├── boot.nix            # Standard systemd-boot loader configuration
 │   ├── workstation/        # Starter graphical workstation (Hyprland + GNOME)
-│   └── server/             # Starter headless server (Docker + SSH)
+│   ├── server/             # Starter headless server (Docker + SSH)
+│   └── nuc/                # Remote coding mini PC (niri + DankMaterialShell, Sunshine over Tailscale)
 ├── modules/                # System-level modules (frost.* namespace)
 │   ├── desktop/            # Window managers, desktop environments, display managers
 │   ├── hardware/           # Audio (PipeWire), Bluetooth, Networking, Power
@@ -63,6 +64,7 @@ Ideal if you want a complete, self-contained NixOS setup for your personal machi
 2. **Inspect and adjust starter configurations**:
    * [`hosts/workstation/`](hosts/workstation) — Pre-configured with Hyprland, GNOME, PipeWire, SDDM, and Disko NVMe partitioning.
    * [`hosts/server/`](hosts/server) — Pre-configured headless setup with Docker, OpenSSH, and standard Disko SATA partitioning.
+   * [`hosts/nuc/`](hosts/nuc) — Intel NUC 13 Pro remote coding box for user `arpan`: niri + DankMaterialShell, Sunshine with Intel VA-API encoding, Tailscale + mosh, Claude Code / Codex / Herdr, Python / Rust / Go / Node toolchains, Docker, nix-ld, and sleep disabled. See [Remote Desktop Host](#-remote-desktop-host-nuc).
    * [`home/users/frost.nix`](home/users/frost.nix) — Starter user dotfiles (Zsh, Starship, Neovim, Kitty, Git).
 
 3. **Customize credentials**:
@@ -173,6 +175,44 @@ sudo nixos-enter
 
 ---
 
+## 🖥️ Remote Desktop Host (NUC)
+
+`hosts/nuc` turns a mini PC into a remote coding machine: a full desktop streamed with [Moonlight](https://moonlight-stream.org), plus SSH/mosh for terminal work, both over Tailscale. It auto-logs `arpan` into niri so Sunshine always has a session to capture, and it disables suspend so the box stays reachable. The user profile lives in [`home/users/arpan.nix`](home/users/arpan.nix).
+
+```bash
+sudo nix run .#install -- nuc          # formats /dev/nvme0n1 (unencrypted Btrfs)
+```
+
+After first boot (log in once locally or over SSH):
+
+1. `sudo tailscale up --ssh` and approve the machine in your tailnet. `--ssh` enables Tailscale SSH, so `ssh arpan@<nuc>` works from your tailnet without adding a key (OpenSSH itself is key-only: add keys to `frost.services.ssh.authorizedKeys`).
+2. Open `https://<nuc-tailscale-name>:47990` from another tailnet device, create the Sunshine admin login.
+3. In Moonlight, add the host by its Tailscale IP or MagicDNS name and enter the pairing PIN in the Sunshine web UI.
+4. Clone this repo to `/home/arpan/Frost`. The niri config links from there, and the nightly upgrade rebuilds from it.
+5. In the BIOS, enable Wake-on-LAN and set *After Power Failure* to *Power On*.
+
+Keeping it healthy unattended:
+
+* **Nightly upgrade (04:00):** rebuilds `/home/arpan/Frost#nuc` with the newest `nixos-26.05` nixpkgs, so security fixes land without you. Your `flake.lock` is not modified, and whatever is checked out (including uncommitted edits) is what gets deployed. Check with `systemctl status nixos-upgrade`; roll back from the boot menu if a night goes wrong.
+* **Snapshots:** snapper snapshots `/home` hourly (12 hourly, 7 daily, 4 weekly, 3 monthly). `snapper -c home list`, then copy files back out of `/home/.snapshots/<n>/snapshot/`. These protect against mistakes, not disk failure; add an off-machine backup for that.
+* **Memory:** zram swap (50% of RAM, compressed) plus earlyoom, which kills the biggest process before the box freezes.
+* **Wake-on-LAN:** magic packets are accepted on the wired port. Send one from a device on the same LAN (router, phone app, `wakeonlan <mac>`); Tailscale can't reach a powered-off machine.
+* **Firmware and thermals:** `fwupdmgr refresh && fwupdmgr update` for firmware the vendor publishes to LVFS; thermald manages CPU temperatures.
+
+Notes:
+
+* **No monitor attached?** The iGPU exposes no output to capture. Plug in an HDMI dummy plug (most reliable), or set `frost.services.sunshine.forceOutput = "HDMI-A-1";` to force the port on at boot.
+* **Firewall:** Sunshine ports are not opened on the LAN; `tailscale0` is a trusted interface. Set `frost.services.sunshine.openFirewall = true` for LAN streaming.
+* **Passwords:** `users.mutableUsers` is false, so `passwd` changes are reverted on rebuild. Replace `initialPassword = "changeme"` in `hosts/nuc/users.nix` with `hashedPassword` (from `mkpasswd -m yescrypt`).
+* **Gujarati typing:** fcitx5 ships Rime and m17n. Add one of the m17n Gujarati layouts (InScript, phonetic or ITRANS) in `fcitx5-configtool`; Noto and Lohit Gujarati fonts are installed.
+* **Physical access:** auto-login means anyone at the keyboard gets the desktop. Lock it with `Mod+Alt+L` or enable DMS's idle lock.
+* **Encryption:** the disk is unencrypted so the box can come back unattended after a power cut. Use the `workstation` LUKS layout instead if that trade-off doesn't suit you.
+* **Theming:** DMS runs matugen on every wallpaper change, and the colours flow into niri, GTK (adw-gtk3 + `dank-colors.css`), Qt apps via qt6ct (VLC, qBittorrent), kitty, Emacs and the fcitx5 popup. GTK is already wired, so skip DMS's *Apply GTK colors* button: it would overwrite the Home Manager-managed `gtk.css`. Neovim isn't wired because Frost's nvim config is pure; load `colors/dms.lua` from it if you want that too.
+* **Shell:** `y` opens yazi (and cds to where you quit), Ctrl-R is atuin history, Ctrl-T/Alt-C are fzf over `fd`, `lazygit` is in the git module.
+* **niri config:** `home/configs/niri/config.kdl` is DMS's recommended niri config with kitty as the terminal (`Mod+T`, launcher on `Mod+Space`). DMS writes its theme and keybind overrides to `~/.config/niri/dms/`.
+
+---
+
 ## 🧩 Option Namespaces Overview
 
 Frost utilizes a unified, predictable option hierarchy:
@@ -181,24 +221,27 @@ Frost utilizes a unified, predictable option hierarchy:
 
 | Namespace | Key Capabilities |
 | :--- | :--- |
-| `frost.desktop.wms` | `hyprland` (UWSM, Waybar, Caelestia integration) |
+| `frost.desktop.wms` | `hyprland` (UWSM, Waybar, Caelestia integration), `niri` |
 | `frost.desktop.des` | `gnome` |
-| `frost.desktop.dms` | `sddm`, `caelestia-greeter` |
-| `frost.hardware` | `pipewire`, `bluetooth`, `power`, `networking` (NetworkManager or Networkd) |
+| `frost.desktop.dms` | `sddm`, `greetd` (tuigreet, optional auto-login), `caelestia-greeter` |
+| `frost.desktop.tools` | `caelestia`, `dank_material_shell` |
+| `frost.hardware` | `pipewire`, `bluetooth`, `power` (optional `thermald`), `intel_graphics` (VA-API), `wake_on_lan`, `fwupd`, `networking` (NetworkManager or Networkd) |
 | `frost.security` | `pam` (YubiKey U2F), `sops_nix`, `polkit`, `gnome_keyring`, `onepassword` |
-| `frost.services` | `ssh`, `tailscale`, `wireguard`, `cloudflared`, `syncthing`, `adguard` |
-| `frost.storage` | `disko`, `impermanence` (root-on-tmpfs), `btrfs_rollback`, `zfs` |
+| `frost.personalization` | `fonts` (optional `gujarati`), `fcitx5` (Rime, m17n, theme), `locales`, `xdg` |
+| `frost.services` | `ssh`, `mosh`, `tailscale`, `sunshine`, `wireguard`, `cloudflared`, `syncthing`, `adguard` |
+| `frost.storage` | `disko`, `impermanence` (root-on-tmpfs), `btrfs_rollback`, `snapper`, `zfs` |
 | `frost.virtualization` | `microvm` (declarative hypervisor guest VMs), `docker`, `podman`, `libvirt` |
-| `frost.system` | `home_manager` (shared module injection), `keymap`, `autoTimezone` |
+| `frost.system` | `home_manager` (shared module injection), `auto_upgrade`, `zram`, `keymap`, `autoTimezone` |
 
 ### User Options (`frost.home.apps.*`)
 
 Over 110 modular application wrappers managed by Home Manager:
 
-* **`ai`**: `antigravity`, `mcp_hub`, `n8n`, `opencode`
+* **`ai`**: `claude_code`, `claude_desktop`, `codex`, `herdr` (from [llm-agents.nix](https://github.com/numtide/llm-agents.nix), updated daily, cached at `cache.numtide.com`), `antigravity` (2.0 app + `agy` CLI), `mcp_hub`, `n8n`, `opencode`
+* **`langs`**: `python`, `rust`, `go`, `javascript`, `nix`, … (LSPs/formatters; set `toolchain.enable` for the compiler/runtime itself)
 * **`creative`**: `blender`, `kdenlive`, `inkscape`, `obs`, `parabolic`, `sly`
-* **`development`**: `git`, `nvim`, `flaker`, `heimdall`, `android_studio`, `vscode`, `zed`
-* **`shell`**: `zsh`, `starship`, `bat`, `eza`, `fzf`, `kitty`, `tmux`, `zoxide`, `fastfetch`
+* **`development`**: `git`, `nvim`, `emacs`, `cursor`, `direnv`, `flaker`, `heimdall`, `android_studio`, `vscode`, `zed`
+* **`shell`**: `zsh`, `starship`, `atuin`, `bat`, `eza`, `fzf` (with fd), `yazi`, `kitty`, `tmux`, `zoxide`, `fastfetch`
 * **`networking`**: `zen_browser`, `brave`, `tor`, `wireguard`, `openvpn`, `remmina`
 * **`office`**: `libreoffice`, `onlyoffice`, `zotero`, `marktext`, `folio`, `todoist`
 * **`system`**: `btop`, `ripgrep`, `thunar`, `pwvucontrol`, `sops`, `zip`
