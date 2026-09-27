@@ -20,7 +20,7 @@
           enable = true;
           command = lib.getExe' config.programs.niri.package "niri-session";
           # Sunshine needs a running graphical session, so log in without a keyboard at boot.
-          autoLogin = "frost";
+          autoLogin = "arpan";
         };
       };
       tools = {
@@ -44,7 +44,15 @@
       };
     };
     personalization = {
-      fonts.enable = true;
+      fcitx5 = {
+        enable = true;
+        m17n.enable = true;
+        rime.enable = true;
+      };
+      fonts = {
+        enable = true;
+        gujarati.enable = true;
+      };
       locales.locale = "en_US.UTF-8";
       xdg.enable = true;
     };
@@ -53,7 +61,12 @@
       polkit.enable = true;
     };
     services = {
-      ssh.user = "frost";
+      mosh.enable = true;
+      ssh = {
+        user = "arpan";
+        # Key-only SSH. Add your public key here, or use Tailscale SSH (`sudo tailscale up --ssh`).
+        authorizedKeys = [];
+      };
       sunshine = {
         enable = true;
         # No monitor or dummy plug? Force the HDMI port on instead:
@@ -61,10 +74,17 @@
       };
       tailscale.enable = true;
     };
+    storage = {
+      # nix-ld: lets VS Code/Zed remote servers and prebuilt npm/pip binaries run.
+      fhs.enable = true;
+    };
     system = {
       keymap = "us";
       home_manager.enable = true;
       autoTimezone = true;
+    };
+    virtualization = {
+      docker.enable = true;
     };
   };
 }

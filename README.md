@@ -28,7 +28,7 @@ Frost/
 │   ├── boot.nix            # Standard systemd-boot loader configuration
 │   ├── workstation/        # Starter graphical workstation (Hyprland + GNOME)
 │   ├── server/             # Starter headless server (Docker + SSH)
-│   └── nuc/                # Remote desktop mini PC (niri + DankMaterialShell, Sunshine over Tailscale)
+│   └── nuc/                # Remote coding mini PC (niri + DankMaterialShell, Sunshine over Tailscale)
 ├── modules/                # System-level modules (frost.* namespace)
 │   ├── desktop/            # Window managers, desktop environments, display managers
 │   ├── hardware/           # Audio (PipeWire), Bluetooth, Networking, Power
@@ -64,7 +64,7 @@ Ideal if you want a complete, self-contained NixOS setup for your personal machi
 2. **Inspect and adjust starter configurations**:
    * [`hosts/workstation/`](hosts/workstation) — Pre-configured with Hyprland, GNOME, PipeWire, SDDM, and Disko NVMe partitioning.
    * [`hosts/server/`](hosts/server) — Pre-configured headless setup with Docker, OpenSSH, and standard Disko SATA partitioning.
-   * [`hosts/nuc/`](hosts/nuc) — Intel NUC 13 Pro remote desktop: niri + DankMaterialShell, greetd auto-login, Sunshine with Intel VA-API encoding, Tailscale, and sleep disabled. See [Remote Desktop Host](#-remote-desktop-host-nuc).
+   * [`hosts/nuc/`](hosts/nuc) — Intel NUC 13 Pro remote coding box for user `arpan`: niri + DankMaterialShell, Sunshine with Intel VA-API encoding, Tailscale + mosh, Claude Code / Codex / Herdr, Python / Rust / Go / Node toolchains, Docker, nix-ld, and sleep disabled. See [Remote Desktop Host](#-remote-desktop-host-nuc).
    * [`home/users/frost.nix`](home/users/frost.nix) — Starter user dotfiles (Zsh, Starship, Neovim, Kitty, Git).
 
 3. **Customize credentials**:
@@ -177,7 +177,7 @@ sudo nixos-enter
 
 ## 🖥️ Remote Desktop Host (NUC)
 
-`hosts/nuc` turns a mini PC into a machine you stream from with [Moonlight](https://moonlight-stream.org) over Tailscale. It auto-logs `frost` into niri so Sunshine always has a session to capture, and it disables suspend so the box stays reachable.
+`hosts/nuc` turns a mini PC into a remote coding machine: a full desktop streamed with [Moonlight](https://moonlight-stream.org), plus SSH/mosh for terminal work, both over Tailscale. It auto-logs `arpan` into niri so Sunshine always has a session to capture, and it disables suspend so the box stays reachable. The user profile lives in [`home/users/arpan.nix`](home/users/arpan.nix).
 
 ```bash
 sudo nix run .#install -- nuc          # formats /dev/nvme0n1 (unencrypted Btrfs)
@@ -185,7 +185,7 @@ sudo nix run .#install -- nuc          # formats /dev/nvme0n1 (unencrypted Btrfs
 
 After first boot (log in once locally or over SSH):
 
-1. `sudo tailscale up` and approve the machine in your tailnet.
+1. `sudo tailscale up --ssh` and approve the machine in your tailnet. `--ssh` enables Tailscale SSH, so `ssh arpan@<nuc>` works from your tailnet without adding a key (OpenSSH itself is key-only: add keys to `frost.services.ssh.authorizedKeys`).
 2. Open `https://<nuc-tailscale-name>:47990` from another tailnet device, create the Sunshine admin login.
 3. In Moonlight, add the host by its Tailscale IP or MagicDNS name and enter the pairing PIN in the Sunshine web UI.
 
@@ -193,6 +193,8 @@ Notes:
 
 * **No monitor attached?** The iGPU exposes no output to capture. Plug in an HDMI dummy plug (most reliable), or set `frost.services.sunshine.forceOutput = "HDMI-A-1";` to force the port on at boot.
 * **Firewall:** Sunshine ports are not opened on the LAN; `tailscale0` is a trusted interface. Set `frost.services.sunshine.openFirewall = true` for LAN streaming.
+* **Passwords:** `users.mutableUsers` is false, so `passwd` changes are reverted on rebuild. Replace `initialPassword = "changeme"` in `hosts/nuc/users.nix` with `hashedPassword` (from `mkpasswd -m yescrypt`).
+* **Gujarati typing:** fcitx5 ships Rime and m17n. Add one of the m17n Gujarati layouts (InScript, phonetic or ITRANS) in `fcitx5-configtool`; Noto and Lohit Gujarati fonts are installed.
 * **Physical access:** auto-login means anyone at the keyboard gets the desktop. Lock it with `Mod+Alt+L` or enable DMS's idle lock.
 * **Encryption:** the disk is unencrypted so the box can come back unattended after a power cut. Use the `workstation` LUKS layout instead if that trade-off doesn't suit you.
 * **niri config:** `home/configs/niri/config.kdl` is DMS's recommended niri config with kitty as the terminal (`Mod+T`, launcher on `Mod+Space`). DMS writes its theme and keybind overrides to `~/.config/niri/dms/`.
@@ -213,7 +215,8 @@ Frost utilizes a unified, predictable option hierarchy:
 | `frost.desktop.tools` | `caelestia`, `dank_material_shell` |
 | `frost.hardware` | `pipewire`, `bluetooth`, `power`, `intel_graphics` (VA-API), `networking` (NetworkManager or Networkd) |
 | `frost.security` | `pam` (YubiKey U2F), `sops_nix`, `polkit`, `gnome_keyring`, `onepassword` |
-| `frost.services` | `ssh`, `tailscale`, `sunshine`, `wireguard`, `cloudflared`, `syncthing`, `adguard` |
+| `frost.personalization` | `fonts` (optional `gujarati`), `fcitx5` (Rime, m17n), `locales`, `xdg` |
+| `frost.services` | `ssh`, `mosh`, `tailscale`, `sunshine`, `wireguard`, `cloudflared`, `syncthing`, `adguard` |
 | `frost.storage` | `disko`, `impermanence` (root-on-tmpfs), `btrfs_rollback`, `zfs` |
 | `frost.virtualization` | `microvm` (declarative hypervisor guest VMs), `docker`, `podman`, `libvirt` |
 | `frost.system` | `home_manager` (shared module injection), `keymap`, `autoTimezone` |
@@ -222,9 +225,10 @@ Frost utilizes a unified, predictable option hierarchy:
 
 Over 110 modular application wrappers managed by Home Manager:
 
-* **`ai`**: `antigravity`, `mcp_hub`, `n8n`, `opencode`
+* **`ai`**: `claude_code`, `codex`, `herdr`, `antigravity`, `mcp_hub`, `n8n`, `opencode`
+* **`langs`**: `python`, `rust`, `go`, `javascript`, `nix`, … (LSPs/formatters; set `toolchain.enable` for the compiler/runtime itself)
 * **`creative`**: `blender`, `kdenlive`, `inkscape`, `obs`, `parabolic`, `sly`
-* **`development`**: `git`, `nvim`, `flaker`, `heimdall`, `android_studio`, `vscode`, `zed`
+* **`development`**: `git`, `nvim`, `direnv`, `flaker`, `heimdall`, `android_studio`, `vscode`, `zed`
 * **`shell`**: `zsh`, `starship`, `bat`, `eza`, `fzf`, `kitty`, `tmux`, `zoxide`, `fastfetch`
 * **`networking`**: `zen_browser`, `brave`, `tor`, `wireguard`, `openvpn`, `remmina`
 * **`office`**: `libreoffice`, `onlyoffice`, `zotero`, `marktext`, `folio`, `todoist`

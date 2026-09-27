@@ -6,35 +6,40 @@
 }: let
   cfg = config.frost.personalization.fonts;
 in {
-  options.frost.personalization.fonts.enable =
-    lib.mkEnableOption "Fonts";
+  options.frost.personalization.fonts = {
+    enable = lib.mkEnableOption "Fonts";
+    # Noto Sans/Serif Gujarati already ship in noto-fonts; this adds Lohit as a second face.
+    gujarati.enable = lib.mkEnableOption "extra Gujarati fonts";
+  };
 
   config = lib.mkIf cfg.enable {
     fonts = {
-      packages = with pkgs; [
-        inter
+      packages = with pkgs;
+        lib.optional cfg.gujarati.enable lohit-fonts.gujarati
+        ++ [
+          inter
 
-        libertinus
-        source-serif
-        source-sans
-        source-code-pro
-        eb-garamond
-        merriweather
-        recursive
+          libertinus
+          source-serif
+          source-sans
+          source-code-pro
+          eb-garamond
+          merriweather
+          recursive
 
-        liberation_ttf
+          liberation_ttf
 
-        corefonts
-        vista-fonts
+          corefonts
+          vista-fonts
 
-        noto-fonts
-        noto-fonts-cjk-sans
-        noto-fonts-cjk-serif
-        noto-fonts-color-emoji
+          noto-fonts
+          noto-fonts-cjk-sans
+          noto-fonts-cjk-serif
+          noto-fonts-color-emoji
 
-        dejavu_fonts
-        gyre-fonts
-      ];
+          dejavu_fonts
+          gyre-fonts
+        ];
 
       fontDir.enable = true;
 
