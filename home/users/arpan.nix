@@ -1,8 +1,5 @@
 {pkgs, ...}: {
   home.packages = with pkgs; [
-    ripgrep
-    fd
-    fzf
     btop
     gnumake
     unzip
@@ -18,6 +15,7 @@
 
       development = {
         direnv.enable = true;
+        emacs.enable = true;
         git = {
           enable = true;
           userName = "Arpan";
@@ -53,21 +51,25 @@
       };
 
       shell = {
+        atuin.enable = true;
         bat.enable = true;
         curl.enable = true;
         eza.enable = true;
         fastfetch.enable = true;
+        fzf.enable = true;
         jq.enable = true;
         kitty.enable = true;
         starship.enable = true;
         tmux.enable = true;
         tree.enable = true;
         wget.enable = true;
+        yazi.enable = true;
         zsh.enable = true;
         zoxide.enable = true;
       };
 
       system = {
+        ripgrep.enable = true;
         zip.enable = true;
       };
 
@@ -80,6 +82,9 @@
       };
     };
 
-    ui.wms.niri.enable = true;
+    ui = {
+      tools.dms_theming.enable = true;
+      wms.niri.enable = true;
+    };
   };
 }

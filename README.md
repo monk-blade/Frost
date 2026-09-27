@@ -207,6 +207,8 @@ Notes:
 * **Gujarati typing:** fcitx5 ships Rime and m17n. Add one of the m17n Gujarati layouts (InScript, phonetic or ITRANS) in `fcitx5-configtool`; Noto and Lohit Gujarati fonts are installed.
 * **Physical access:** auto-login means anyone at the keyboard gets the desktop. Lock it with `Mod+Alt+L` or enable DMS's idle lock.
 * **Encryption:** the disk is unencrypted so the box can come back unattended after a power cut. Use the `workstation` LUKS layout instead if that trade-off doesn't suit you.
+* **Theming:** DMS runs matugen on every wallpaper change, and the colours flow into niri, GTK (adw-gtk3 + `dank-colors.css`), Qt apps via qt6ct (VLC, qBittorrent), kitty, Emacs and the fcitx5 popup. GTK is already wired, so skip DMS's *Apply GTK colors* button: it would overwrite the Home Manager-managed `gtk.css`. Neovim isn't wired because Frost's nvim config is pure; load `colors/dms.lua` from it if you want that too.
+* **Shell:** `y` opens yazi (and cds to where you quit), Ctrl-R is atuin history, Ctrl-T/Alt-C are fzf over `fd`, `lazygit` is in the git module.
 * **niri config:** `home/configs/niri/config.kdl` is DMS's recommended niri config with kitty as the terminal (`Mod+T`, launcher on `Mod+Space`). DMS writes its theme and keybind overrides to `~/.config/niri/dms/`.
 
 ---
@@ -225,7 +227,7 @@ Frost utilizes a unified, predictable option hierarchy:
 | `frost.desktop.tools` | `caelestia`, `dank_material_shell` |
 | `frost.hardware` | `pipewire`, `bluetooth`, `power` (optional `thermald`), `intel_graphics` (VA-API), `wake_on_lan`, `fwupd`, `networking` (NetworkManager or Networkd) |
 | `frost.security` | `pam` (YubiKey U2F), `sops_nix`, `polkit`, `gnome_keyring`, `onepassword` |
-| `frost.personalization` | `fonts` (optional `gujarati`), `fcitx5` (Rime, m17n), `locales`, `xdg` |
+| `frost.personalization` | `fonts` (optional `gujarati`), `fcitx5` (Rime, m17n, theme), `locales`, `xdg` |
 | `frost.services` | `ssh`, `mosh`, `tailscale`, `sunshine`, `wireguard`, `cloudflared`, `syncthing`, `adguard` |
 | `frost.storage` | `disko`, `impermanence` (root-on-tmpfs), `btrfs_rollback`, `snapper`, `zfs` |
 | `frost.virtualization` | `microvm` (declarative hypervisor guest VMs), `docker`, `podman`, `libvirt` |
@@ -238,8 +240,8 @@ Over 110 modular application wrappers managed by Home Manager:
 * **`ai`**: `claude_code`, `codex`, `herdr`, `antigravity`, `mcp_hub`, `n8n`, `opencode`
 * **`langs`**: `python`, `rust`, `go`, `javascript`, `nix`, … (LSPs/formatters; set `toolchain.enable` for the compiler/runtime itself)
 * **`creative`**: `blender`, `kdenlive`, `inkscape`, `obs`, `parabolic`, `sly`
-* **`development`**: `git`, `nvim`, `direnv`, `flaker`, `heimdall`, `android_studio`, `vscode`, `zed`
-* **`shell`**: `zsh`, `starship`, `bat`, `eza`, `fzf`, `kitty`, `tmux`, `zoxide`, `fastfetch`
+* **`development`**: `git`, `nvim`, `emacs`, `direnv`, `flaker`, `heimdall`, `android_studio`, `vscode`, `zed`
+* **`shell`**: `zsh`, `starship`, `atuin`, `bat`, `eza`, `fzf` (with fd), `yazi`, `kitty`, `tmux`, `zoxide`, `fastfetch`
 * **`networking`**: `zen_browser`, `brave`, `tor`, `wireguard`, `openvpn`, `remmina`
 * **`office`**: `libreoffice`, `onlyoffice`, `zotero`, `marktext`, `folio`, `todoist`
 * **`system`**: `btop`, `ripgrep`, `thunar`, `pwvucontrol`, `sops`, `zip`

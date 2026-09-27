@@ -55,6 +55,7 @@
         enable = true;
         m17n.enable = true;
         rime.enable = true;
+        theme = "dms";
       };
       fonts = {
         enable = true;

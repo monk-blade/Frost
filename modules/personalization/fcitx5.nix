@@ -10,6 +10,12 @@ in {
     enable = lib.mkEnableOption "Fcitx5 input method framework";
     rime.enable = lib.mkEnableOption "Rime input engine";
     m17n.enable = lib.mkEnableOption "m17n engine (Indic layouts such as Gujarati InScript/phonetic)";
+    theme = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      example = "dms";
+      description = "Classic UI theme. DankMaterialShell generates a matugen-coloured theme named `dms`.";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -25,6 +31,12 @@ in {
           ]
           ++ lib.optional cfg.rime.enable pkgs.fcitx5-rime
           ++ lib.optional cfg.m17n.enable pkgs.fcitx5-m17n;
+        settings.addons = lib.mkIf (cfg.theme != null) {
+          classicui.globalSection = {
+            Theme = cfg.theme;
+            DarkTheme = cfg.theme;
+          };
+        };
       };
     };
   };
