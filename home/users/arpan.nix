@@ -10,12 +10,14 @@
 
     apps = {
       ai = {
+        antigravity.enable = true;
         claude_code.enable = true;
         codex.enable = true;
         herdr.enable = true;
       };
 
       development = {
+        cursor.enable = true;
         direnv.enable = true;
         emacs.enable = true;
         git = {
@@ -45,6 +47,10 @@
           enable = true;
           toolchain.enable = true;
         };
+      };
+
+      office = {
+        obsidian.enable = true;
       };
 
       networking = {
