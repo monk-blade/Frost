@@ -29,10 +29,12 @@
     extra-substituters = [
       # "https://hyprland.cachix.org"
       "https://cache.flox.dev"
+      "https://cache.numtide.com" # llm-agents
     ];
     extra-trusted-public-keys = [
       # "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
       "flox-cache-public-1:7F4OyH7ZCnFhcze3fJdfyXYLQw/aV7GEed86nQ7IsOs="
+      "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
     ];
   };
 

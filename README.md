@@ -237,7 +237,7 @@ Frost utilizes a unified, predictable option hierarchy:
 
 Over 110 modular application wrappers managed by Home Manager:
 
-* **`ai`**: `claude_code`, `codex`, `herdr`, `antigravity` (2.0 app + `agy` CLI), `mcp_hub`, `n8n`, `opencode`
+* **`ai`**: `claude_code`, `claude_desktop`, `codex`, `herdr` (from [llm-agents.nix](https://github.com/numtide/llm-agents.nix), updated daily, cached at `cache.numtide.com`), `antigravity` (2.0 app + `agy` CLI), `mcp_hub`, `n8n`, `opencode`
 * **`langs`**: `python`, `rust`, `go`, `javascript`, `nix`, … (LSPs/formatters; set `toolchain.enable` for the compiler/runtime itself)
 * **`creative`**: `blender`, `kdenlive`, `inkscape`, `obs`, `parabolic`, `sly`
 * **`development`**: `git`, `nvim`, `emacs`, `cursor`, `direnv`, `flaker`, `heimdall`, `android_studio`, `vscode`, `zed`

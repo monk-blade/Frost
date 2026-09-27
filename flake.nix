@@ -84,6 +84,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Deliberately not following nixpkgs: upstream only supports its own nixpkgs-unstable pin,
+    # and following would also miss cache.numtide.com (configured in hosts/base.nix).
+    llm-agents.url = "github:numtide/llm-agents.nix";
+
     mcp-hub-server = {
       url = "github:ravitemer/mcp-hub";
       inputs.nixpkgs.follows = "nixpkgs";

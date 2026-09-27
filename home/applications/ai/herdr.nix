@@ -2,6 +2,7 @@
   config,
   pkgs,
   lib,
+  inputs,
   ...
 }: let
   cfg = config.frost.home.apps.ai.herdr;
@@ -10,7 +11,7 @@ in {
 
   config = lib.mkIf cfg.enable {
     home.packages = [
-      pkgs.unstable.herdr
+      inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.herdr
     ];
   };
 }

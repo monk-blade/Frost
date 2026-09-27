@@ -12,6 +12,7 @@
       ai = {
         antigravity.enable = true;
         claude_code.enable = true;
+        claude_desktop.enable = true;
         codex.enable = true;
         herdr.enable = true;
       };
