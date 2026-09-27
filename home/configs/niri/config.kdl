@@ -465,6 +465,11 @@ binds {
     Mod+Shift+P { power-off-monitors; }
 }
 
+cursor {
+    xcursor-theme "Bibata-Modern-Ice"
+    xcursor-size 24
+}
+
 // DMS-generated overrides (written by the shell at runtime; later definitions win)
 include optional=true "dms/colors.kdl"
 include optional=true "dms/layout.kdl"

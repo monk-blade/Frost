@@ -6,6 +6,8 @@
   ];
 
   frost.home = {
+    environment.cursor.enable = true;
+
     apps = {
       ai = {
         claude_code.enable = true;
