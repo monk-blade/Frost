@@ -91,7 +91,7 @@ Ideal if you want a complete, self-contained NixOS setup for your personal machi
 
 ### Option B: As an External Flake Library (Private Fleet Architecture)
 
-Ideal if you want to keep your personal configurations, encrypted secrets, and private hostnames in a separate private repository (e.g. `Glacier`) while pulling modules and updates from Frost.
+Ideal if you want to keep your personal configurations, encrypted secrets, and private hostnames in a separate private repository while pulling modules and updates from Frost.
 
 Create a private repository with the following minimal `flake.nix`:
 
